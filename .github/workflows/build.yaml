@@ -66,13 +66,13 @@ jobs:
         echo "new_version=$new_version" >> $GITHUB_OUTPUT
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v1
-    - name: List Docker images
-      run: |
-        docker image ls 
-        sleep 30
         
-
     - uses: actions/checkout@v4
     - name: Build the Docker image
       run: |
         make build
+        
+    - name: List Docker images
+      run: |
+        docker image ls 
+        sleep 30
