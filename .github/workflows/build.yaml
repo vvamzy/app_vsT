@@ -1,0 +1,85 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches:
+      - qa
+      - stage
+      - main
+      - master
+
+jobs:
+  versioning:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Checkout the code
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    # Setup Git
+    - name: Setup Git
+      run: |
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
+
+    # Fetch all tags
+    - name: Fetch all tags
+      run: git fetch --tags
+
+    # Calculate the new version
+    - name: Calculate new version
+      id: version
+      run: |
+        # Extract the latest tag (fallback to v0.0.0 if no tags exist)
+        latest_tag=$(git describe --tags $(git rev-list --tags --max-count=1) 2>/dev/null || echo "v0.0.0")
+
+        # Remove the 'v' prefix and split into MAJOR.MINOR.PATCH
+        version=${latest_tag#v}
+        IFS='.' read -r major minor patch <<< "$version"
+
+        # Get the branch name
+        branch_name="${GITHUB_REF##*/}"
+
+        # Increment the version based on the branch
+        case "$branch_name" in
+          qa)
+            patch=$((patch + 1))
+            ;;
+          stage)
+            minor=$((minor + 1))
+            ;;
+          main|master)
+            major=$((major + 1))
+            ;;
+          *)
+            echo "Branch $branch_name is not configured for versioning. Skipping."
+            exit 0
+            ;;
+        esac
+
+        # Create the new version
+        new_version="v${major}.${minor}.${patch}"
+
+        # Output the new version for use in subsequent steps
+        echo "New version: $new_version"
+        echo "new_version=$new_version" >> $GITHUB_OUTPUT
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+
+    - uses: actions/checkout@v4
+    - name: Build the Docker image
+      run: |
+        make build
+        
+    # Tag the new version
+    - name: Create and push the new tag
+      run: |
+        # Get the new version from the previous step
+        new_version=${{ steps.version.outputs.new_version }}
+
+        # Create a new annotated tag
+        git tag -a "$new_version" -m "Release $new_version"
+
+        # Push the new tag
+        git push origin "$new_version"
