@@ -1,0 +1,12 @@
+{
+  "name": "trivy-test-app",
+  "version": "1.0.0",
+  "description": "A simple app to test Trivy vulnerability scanning",
+  "main": "index.js",
+  "dependencies": {
+    "express": "4.16.1"  // Intentionally using an older version with vulnerabilities
+  },
+  "scripts": {
+    "start": "node index.js"
+  }
+}
