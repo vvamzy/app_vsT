@@ -9,7 +9,7 @@ on:
       - master
 
 jobs:
-  versioning:
+  build:
     runs-on: ubuntu-latest
 
     steps:
@@ -71,15 +71,3 @@ jobs:
     - name: Build the Docker image
       run: |
         make build
-        
-    # Tag the new version
-    - name: Create and push the new tag
-      run: |
-        # Get the new version from the previous step
-        new_version=${{ steps.version.outputs.new_version }}
-
-        # Create a new annotated tag
-        git tag -a "$new_version" -m "Release $new_version"
-
-        # Push the new tag
-        git push origin "$new_version"
